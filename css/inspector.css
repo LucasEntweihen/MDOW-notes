@@ -1,0 +1,17 @@
+/**
+ * UI - CV Inspector Drawer Styles
+ */
+#cv-inspector-panel {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#cv-symbols-container::-webkit-scrollbar {
+    width: 5px;
+}
+#cv-symbols-container::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+#cv-symbols-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}

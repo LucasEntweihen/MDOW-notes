@@ -1,0 +1,24 @@
+/**
+ * UI - Modal Styles for MARS Math Lab & Statistics Lab
+ */
+.stats-tab-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.stats-tab-btn:hover {
+    color: #FDE047;
+}
+
+.stats-tab-btn.active {
+    border-color: #FDE047;
+    color: #FDE047;
+}
+
+#calc-steps-preview, #stats-steps-preview {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

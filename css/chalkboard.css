@@ -1,0 +1,91 @@
+/**
+ * Chalkboard & Viewport Styles
+ */
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #090b0d;
+    font-family: 'Inter', sans-serif;
+    touch-action: none;
+}
+
+/* Hardware accelerated scrollable container */
+#scroll-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+    position: relative;
+    background-color: #0b0d10;
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Compact stylized scrollbars */
+#scroll-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+#scroll-container::-webkit-scrollbar-track {
+    background: #121519;
+}
+#scroll-container::-webkit-scrollbar-thumb {
+    background: #8f4f14;
+    border-radius: 4px;
+}
+#scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #b5651d;
+}
+
+/* Workspace 3600x2600px with strict layout containment */
+#canvas-wrapper {
+    position: relative;
+    width: 3600px;
+    height: 2600px;
+    contain: strict;
+    background-image: 
+        url('Quadro-negro vazio com moldura de madeira.png'),
+        radial-gradient(ellipse at center, #23282d 0%, #16191c 75%, #0f1113 100%);
+    background-size: 100% 100%, cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.85);
+}
+
+/* Main Canvas (3600x2600): persistent board strokes */
+#main-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3600px;
+    height: 2600px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Draft Canvas: fixed to viewport for 60+ FPS zero-latency interactive drawing */
+#draft-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 20;
+    pointer-events: none;
+    will-change: contents;
+}
+
+/* Cursors */
+.cursor-pan { cursor: grab; }
+.cursor-pan:active { cursor: grabbing; }
+.cursor-draw { cursor: crosshair; }
+.cursor-text { cursor: text; }
+.cursor-scan { cursor: cell; }

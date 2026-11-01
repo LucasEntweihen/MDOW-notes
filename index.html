@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MARS - Mathematical Analysis and Recognition System & Lousa de Giz</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Math.js para Álgebra Simbólica, Matrizes, Diferenciação e Complexos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+
+    <!-- Google Fonts Caligráficas estilo Giz & UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&family=Fredericka+the+Great&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="css/chalkboard.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/inspector.css">
+    <link rel="stylesheet" href="css/modals.css">
+</head>
+<body>
+
+    <!-- CANVAS DE RASCUNHO FIXO NA VIEWPORT (60+ FPS ZERO-LATÊNCIA) -->
+    <canvas id="draft-canvas"></canvas>
+
+    <!-- MICRO-DOCK SUPERIOR UNIFICADA (MARS TOOLBAR) -->
+    <header class="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center justify-center micro-dock max-w-[98vw]">
+        <!-- Navegação e Giz Livre -->
+        <button class="micro-btn" data-tool="pan" title="Mover Lousa (Ou segure Barra de Espaço)">
+            <i class="ph-bold ph-hand-grabbing"></i>
+        </button>
+        <button class="micro-btn active" data-tool="pen" title="Giz Livre Ultra-Fluido (P)">
+            <i class="ph-bold ph-pencil-simple-line"></i>
+        </button>
+        <button class="micro-btn" data-tool="eraser" title="Apagador de Giz (E)">
+            <i class="ph-bold ph-eraser"></i>
+        </button>
+        <button class="micro-btn" data-tool="text" title="Texto Caligráfico em Giz (T)">
+            <i class="ph-bold ph-text-t"></i>
+        </button>
+        <button class="micro-btn" data-tool="math-box" title="Inserir Fórmula ou Equação Direta (M)">
+            <i class="ph-bold ph-math-operations"></i>
+        </button>
+
+        <div class="micro-sep"></div>
+
+        <!-- Formas Geométricas & Matemáticas -->
+        <button class="micro-btn" data-tool="line" title="Segmento de Reta com Medida">
+            <i class="ph-bold ph-line-segment"></i>
+        </button>
+        <button class="micro-btn" data-tool="vector" title="Vetor Direcional com Módulo">
+            <i class="ph-bold ph-arrow-up-right"></i>
+        </button>
+        <button class="micro-btn" data-tool="rect" title="Retângulo (Área e Perímetro)">
+            <i class="ph-bold ph-rectangle"></i>
+        </button>
+        <button class="micro-btn" data-tool="circle" title="Círculo (Raio e Área)">
+            <i class="ph-bold ph-circle"></i>
+        </button>
+        <button class="micro-btn" data-tool="triangle" title="Triângulo Isósceles">
+            <i class="ph-bold ph-triangle"></i>
+        </button>
+        <button class="micro-btn" data-tool="right-triangle" title="Triângulo Retângulo (Pitágoras 90°)">
+            <i class="ph-bold ph-ruler"></i>
+        </button>
+        <button class="micro-btn" data-tool="polygon" title="Hexágono Regular">
+            <i class="ph-bold ph-hexagon"></i>
+        </button>
+        <button class="micro-btn" data-tool="cube" title="Cubo Geométrico 3D em Giz">
+            <i class="ph-bold ph-cube"></i>
+        </button>
+        <button class="micro-btn" data-tool="axes" title="Plano Cartesiano 2D Graduado">
+            <i class="ph-bold ph-axes-in"></i>
+        </button>
+        <button class="micro-btn" data-tool="sine" title="Onda Senoidal Matemática">
+            <i class="ph-bold ph-wave-sine"></i>
+        </button>
+
+        <div class="micro-sep"></div>
+
+        <!-- 5 Cores Clássicas de Giz -->
+        <div class="flex items-center gap-1.5 px-1" title="5 Cores Clássicas de Giz">
+            <button class="micro-color-dot active" style="background-color: #F8FAFC; color: #F8FAFC;" data-color="#F8FAFC" title="Branco (#F8FAFC)"></button>
+            <button class="micro-color-dot" style="background-color: #FDE047; color: #FDE047;" data-color="#FDE047" title="Amarelo (#FDE047)"></button>
+            <button class="micro-color-dot" style="background-color: #FB7185; color: #FB7185;" data-color="#FB7185" title="Rosa (#FB7185)"></button>
+            <button class="micro-color-dot" style="background-color: #38BDF8; color: #38BDF8;" data-color="#38BDF8" title="Azul (#38BDF8)"></button>
+            <button class="micro-color-dot" style="background-color: #4ADE80; color: #4ADE80;" data-color="#4ADE80" title="Verde (#4ADE80)"></button>
+        </div>
+
+        <!-- Espessura Compacta + Checkbox Medidas -->
+        <div class="flex items-center gap-1 px-1" title="Espessura do Giz">
+            <input id="chalk-size-slider" type="range" min="3" max="14" value="5" class="w-12 h-1 accent-amber-300 cursor-pointer">
+        </div>
+        <label class="flex items-center gap-1 text-[10px] text-slate-300 cursor-pointer px-1" title="Exibir medidas matemáticas nas formas">
+            <input id="toggle-shape-metrics" type="checkbox" checked class="accent-amber-300 w-3 h-3">
+            <span>Med</span>
+        </label>
+
+        <div class="micro-sep"></div>
+
+        <!-- MARS Engines: Reconhecimento Determinístico, Math Lab e Statistics Lab -->
+        <button class="micro-btn text-amber-300 border-amber-400/40 bg-amber-500/10" data-tool="scanner" title="Ferramenta Scanner MARS: Selecione qualquer expressão com uma caixa delimitadora (S)">
+            <i class="ph-bold ph-scan"></i>
+        </button>
+        <button id="btn-solve-all-strokes" class="micro-pill-btn bg-amber-400/20 hover:bg-amber-400/30 border border-amber-300/60 text-amber-200" title="MARS Scan: Converter e resolver manuscrito via visão determinística">
+            <i class="ph-bold ph-cpu text-xs text-amber-300"></i>
+            <span>MARS Scan</span>
+        </button>
+        <button id="btn-open-calc-lab" class="micro-pill-btn bg-sky-400/20 hover:bg-sky-400/30 border border-sky-300/50 text-sky-200" title="MARS Math Lab: Simbólico, Bhaskara, Derivada, Integral e 5 Camadas de Validação (F)">
+            <i class="ph-bold ph-function text-xs text-sky-300"></i>
+            <span>MARS Math</span>
+        </button>
+        <button id="btn-open-stats-lab" class="micro-pill-btn bg-purple-400/20 hover:bg-purple-400/30 border border-purple-300/50 text-purple-200" title="MARS Statistics Lab: Descritiva, Distribuições, Regressão, Intervalos e Gráficos (D)">
+            <i class="ph-bold ph-chart-bar text-xs text-purple-300"></i>
+            <span>MARS Stats</span>
+        </button>
+        <button id="btn-toggle-inspector" class="micro-pill-btn bg-emerald-400/20 hover:bg-emerald-400/30 border border-emerald-300/50 text-emerald-200" title="Micro-Inspetor CV: Grade 16x16, Topologia e Hipóteses Alternativas">
+            <span>CV</span>
+        </button>
+
+        <div class="micro-sep"></div>
+
+        <!-- Ações Rápidas -->
+        <button id="btn-undo" class="micro-btn" title="Desfazer (Ctrl+Z)">
+            <i class="ph-bold ph-arrow-u-up-left"></i>
+        </button>
+        <button id="btn-redo" class="micro-btn" title="Refazer (Ctrl+Y)">
+            <i class="ph-bold ph-arrow-u-up-right"></i>
+        </button>
+        <button id="btn-center-board" class="micro-btn" title="Centralizar Lousa">
+            <i class="ph-bold ph-crosshair"></i>
+        </button>
+        <button id="btn-clear-board" class="micro-btn text-rose-400 hover:bg-rose-950/70" title="Limpar Lousa Inteira">
+            <i class="ph-bold ph-trash"></i>
+        </button>
+    </header>
+
+    <!-- MICRO-GAVETA RECOLHÍVEL DO INSPETOR CV (240px, OCULTA POR PADRÃO) -->
+    <aside id="cv-inspector-panel" class="fixed right-2 top-12 w-[240px] max-h-[78vh] z-50 micro-dock text-slate-100 flex flex-col overflow-hidden transition-transform duration-200 translate-x-[120%]">
+        <div class="flex items-center justify-between px-2 py-1 border-b border-slate-700/80">
+            <div class="flex items-center gap-1.5">
+                <i class="ph-fill ph-cpu text-xs text-emerald-400"></i>
+                <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">MARS Vision 16×16</span>
+            </div>
+            <button id="btn-close-inspector" class="text-slate-400 hover:text-white text-xs p-0.5">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+
+        <div class="p-1.5 bg-slate-900/60 border-b border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                <span>Expressão Reconhecida:</span>
+                <span id="cv-confidence-badge" class="text-emerald-300 font-bold">100%</span>
+            </div>
+            <div class="flex gap-1">
+                <input id="cv-recognized-input" type="text" placeholder="Ex: 2x+5=15" class="w-full bg-slate-950 text-amber-300 font-mono text-[10px] px-1.5 py-1 rounded border border-slate-700 outline-none">
+                <button id="btn-recalculate-cv" class="px-2 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-[10px]" title="Recalcular e Escrever na Lousa">
+                    =
+                </button>
+            </div>
+            <div class="text-[8px] text-slate-400 italic">Clique nos chips abaixo para alternar hipóteses</div>
+        </div>
+
+        <div id="cv-symbols-container" class="flex-1 overflow-y-auto p-1.5 space-y-1.5 text-[9px] font-mono">
+            <div class="p-2 rounded bg-slate-900/50 text-slate-400 text-center leading-tight">
+                Escreva uma expressão com giz e clique em <b class="text-amber-300">MARS Scan</b> ou use a ferramenta <b class="text-amber-300">Scanner</b>.
+            </div>
+        </div>
+    </aside>
+
+    <!-- ÁREA SCROLLÁVEL 3600x2600px -->
+    <div id="scroll-container">
+        <div id="canvas-wrapper" class="cursor-draw">
+            <canvas id="main-canvas" width="3600" height="2600"></canvas>
+
+            <!-- CAIXA FLUTUANTE DE TEXTO / FÓRMULA -->
+            <div id="floating-text-box">
+                <div class="flex items-center gap-1 mb-1 micro-dock text-[10px] text-slate-200">
+                    <select id="text-font-family" class="bg-slate-800 text-slate-100 rounded px-1.5 py-0.5 border border-slate-600 outline-none text-[10px]">
+                        <option value="'Caveat', cursive">Caveat (Giz)</option>
+                        <option value="'Patrick Hand', cursive">Patrick Hand</option>
+                        <option value="'Fredericka the Great', cursive">Acadêmico</option>
+                    </select>
+                    <select id="text-font-size" class="bg-slate-800 text-slate-100 rounded px-1 py-0.5 border border-slate-600 outline-none text-[10px]">
+                        <option value="34">34px</option>
+                        <option value="48" selected>48px</option>
+                        <option value="68">68px</option>
+                        <option value="88">88px</option>
+                    </select>
+                    <button id="btn-text-frame" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-amber-300" title="Moldura em Giz">
+                        Moldura
+                    </button>
+                    <button id="btn-confirm-text" class="ml-auto px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">
+                        OK
+                    </button>
+                    <button id="btn-cancel-text" class="px-1.5 py-0.5 rounded bg-rose-900/70 text-rose-200">
+                        ✕
+                    </button>
+                </div>
+                <textarea id="floating-textarea" class="chalk-input-area text-3xl" placeholder="Digite aqui..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DO MARS MATH LAB & 5 CAMADAS DE VALIDAÇÃO -->
+    <div id="calc-lab-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-xs p-3">
+        <div class="w-full max-w-xl micro-dock p-4 text-slate-100 flex flex-col gap-3">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-function text-lg text-amber-300"></i>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-amber-300">MARS Math: Álgebra, Cálculo e 5 Camadas de Validação</h2>
+                </div>
+                <button id="btn-close-calc-lab" class="text-slate-400 hover:text-white text-sm">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Presets Rápidos -->
+            <div class="grid grid-cols-4 gap-1.5 text-[10px]">
+                <button class="calc-preset-btn p-1.5 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-left" data-type="symbolic" data-expr="x^2 - 5*x + 6 = 0">
+                    <div class="text-amber-300 font-bold">Bhaskara / Δ</div>
+                    <div class="truncate text-slate-300">x² - 5x + 6 = 0</div>
+                </button>
+                <button class="calc-preset-btn p-1.5 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-left" data-type="integral" data-expr="sin(x) + 0.5*x" data-a="0" data-b="3.1416">
+                    <div class="text-emerald-300 font-bold">Integral Simpson</div>
+                    <div class="truncate text-slate-300">∫₀^π (sin(x)+0.5x)</div>
+                </button>
+                <button class="calc-preset-btn p-1.5 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-left" data-type="matrix" data-expr="[[2, 1], [5, 3]]">
+                    <div class="text-sky-300 font-bold">Matriz & Autovalor</div>
+                    <div class="truncate text-slate-300">det, inv, tr, λ</div>
+                </button>
+                <button class="calc-preset-btn p-1.5 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-left" data-type="symbolic" data-expr="2*x + 4 = 10">
+                    <div class="text-rose-300 font-bold">Linear 1º Grau</div>
+                    <div class="truncate text-slate-300">2x + 4 = 10</div>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <select id="calc-lab-mode" class="bg-slate-800 text-amber-300 font-semibold rounded px-2 py-1.5 border border-slate-600 outline-none text-[11px]">
+                    <option value="symbolic">Equação / Álgebra / Raízes</option>
+                    <option value="integral">Integral Simpson + Derivadas</option>
+                    <option value="matrix">Álgebra Linear (Matrizes)</option>
+                    <option value="plot">Plotar Gráfico f(x)</option>
+                </select>
+                <input id="calc-lab-input" type="text" value="x^2 - 5*x + 6 = 0" class="sm:col-span-2 bg-slate-950 text-white font-mono text-xs px-2.5 py-1.5 rounded border border-slate-600 outline-none">
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/70 p-2 rounded border border-slate-800">
+                <span>Intervalo [a, b]:</span>
+                <label class="flex items-center gap-1">a=<input id="calc-bound-a" type="number" step="any" value="-1" class="w-12 bg-slate-800 text-white px-1 py-0.5 rounded border border-slate-600 font-mono"></label>
+                <label class="flex items-center gap-1">b=<input id="calc-bound-b" type="number" step="any" value="4" class="w-12 bg-slate-800 text-white px-1 py-0.5 rounded border border-slate-600 font-mono"></label>
+                <label class="flex items-center gap-1 ml-auto text-amber-300 cursor-pointer">
+                    <input id="calc-also-plot" type="checkbox" checked class="accent-amber-300">
+                    <span>Plotar curva na lousa</span>
+                </label>
+            </div>
+
+            <div id="calc-steps-preview" class="p-2.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-200 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span>Determinístico: Regras, AST, Álgebra Exata e Verificação</span>
+                <button id="btn-write-calc-to-board" class="px-3 py-1.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-chalkboard-simple"></i>
+                    Escrever na Lousa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DO MARS STATISTICS LAB (SUBSISTEMA PRIORITÁRIO) -->
+    <div id="stats-lab-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-xs p-3">
+        <div class="w-full max-w-2xl micro-dock p-4 text-slate-100 flex flex-col gap-3">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-chart-bar text-lg text-purple-300"></i>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-purple-300">MARS Statistics: Descritiva, Distribuições, Regressão e Gráficos</h2>
+                </div>
+                <button id="btn-close-stats-lab" class="text-slate-400 hover:text-white text-sm">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Abas do Módulo de Estatística -->
+            <div class="flex border-b border-slate-800 gap-2">
+                <button class="stats-tab-btn active border-amber-400 text-amber-300" data-tab="descriptive">Estatística Descritiva</button>
+                <button class="stats-tab-btn text-slate-400" data-tab="distribution">Distribuições & Probabilidade</button>
+                <button class="stats-tab-btn text-slate-400" data-tab="regression">Regressão Linear & Correlação</button>
+            </div>
+
+            <!-- Conteúdo Aba 1: Estatística Descritiva -->
+            <div id="stats-tab-descriptive" class="stats-tab-content space-y-2 text-xs">
+                <div class="text-[11px] text-slate-300">Insira valores numéricos amostrais (separados por vírgula ou espaço):</div>
+                <input id="stats-raw-input" type="text" value="12, 14, 15, 18, 19, 21, 22, 25, 29, 34" class="w-full bg-slate-950 text-amber-300 font-mono text-xs px-2.5 py-1.5 rounded border border-slate-700 outline-none">
+                <div class="flex gap-2 text-[10px] text-slate-400">
+                    <span>Média x̄, Mediana, Moda, Variância s², Desvio Padrão s, CV%, Quartis (Q1, Q3), IQR e Outliers.</span>
+                </div>
+            </div>
+
+            <!-- Conteúdo Aba 2: Distribuições -->
+            <div id="stats-tab-distribution" class="stats-tab-content hidden space-y-2 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Distribuição</label>
+                        <select id="stats-dist-type" class="w-full bg-slate-800 text-purple-300 rounded px-2 py-1 border border-slate-600 outline-none text-xs">
+                            <option value="normal">Normal N(μ, σ)</option>
+                            <option value="binomial">Binomial B(n, p)</option>
+                            <option value="poisson">Poisson (λ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Valor x / k</label>
+                        <input id="stats-dist-x" type="number" step="any" value="1.96" class="w-full bg-slate-950 text-white rounded px-2 py-1 border border-slate-600 font-mono text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Parâmetro 1 (μ / n / λ)</label>
+                        <input id="stats-dist-p1" type="number" step="any" value="0" class="w-full bg-slate-950 text-white rounded px-2 py-1 border border-slate-600 font-mono text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 mb-0.5">Parâmetro 2 (σ / p)</label>
+                        <input id="stats-dist-p2" type="number" step="any" value="1" class="w-full bg-slate-950 text-white rounded px-2 py-1 border border-slate-600 font-mono text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo Aba 3: Regressão Linear -->
+            <div id="stats-tab-regression" class="stats-tab-content hidden space-y-2 text-xs">
+                <div class="text-[11px] text-slate-300">Insira pares ordenados (x, y) por linha:</div>
+                <textarea id="stats-reg-input" rows="3" class="w-full bg-slate-950 text-white font-mono text-xs p-2 rounded border border-slate-700 outline-none">1, 2.2&#10;2, 3.9&#10;3, 6.1&#10;4, 8.0&#10;5, 9.8</textarea>
+                <div class="text-[10px] text-slate-400">Calcula coeficiente r de Pearson, determinação R², reta y = mx + b e força da correlação.</div>
+            </div>
+
+            <!-- Painel de Relatório Preview -->
+            <div id="stats-steps-preview" class="p-2.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-200 whitespace-pre-wrap max-h-40 overflow-y-auto"></div>
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <button id="btn-plot-stats-chart" class="px-3 py-1.5 rounded bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400 text-purple-200 font-semibold text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-chart-scatter"></i>
+                    Plotar Gráfico (Boxplot/Histograma/Dispersão)
+                </button>
+                <button id="btn-write-stats-to-board" class="px-3 py-1.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center gap-1.5">
+                    <i class="ph-bold ph-chalkboard-simple"></i>
+                    Escrever na Lousa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODULAR SCRIPTS (MARS ARCHITECTURE) -->
+    <!-- 1. Config & Core -->
+    <script src="js/config.js"></script>
+    <script src="js/mars/core/types.js"></script>
+    <script src="js/mars/core/event-bus.js"></script>
+    <script src="js/mars/core/intermediate-rep.js"></script>
+
+    <!-- 2. MARS Vision Engine -->
+    <script src="js/mars/vision/preprocessor.js"></script>
+    <script src="js/mars/vision/segmenter.js"></script>
+    <script src="js/mars/vision/feature-extractor.js"></script>
+    <script src="js/mars/vision/prototypes.js"></script>
+    <script src="js/mars/vision/classifier.js"></script>
+    <script src="js/mars/vision/region-detector.js"></script>
+    <script src="js/mars/vision/vision-engine.js"></script>
+
+    <!-- 3. MARS Parser -->
+    <script src="js/mars/parser/disambiguator.js"></script>
+    <script src="js/mars/parser/spatial-syntax.js"></script>
+    <script src="js/mars/parser/ast-builder.js"></script>
+
+    <!-- 4. MARS Math Engine -->
+    <script src="js/mars/math/arithmetic.js"></script>
+    <script src="js/mars/math/calculus.js"></script>
+    <script src="js/mars/math/algebra.js"></script>
+    <script src="js/mars/math/functions.js"></script>
+    <script src="js/mars/math/linear-algebra.js"></script>
+    <script src="js/mars/math/math-engine.js"></script>
+
+    <!-- 5. MARS Statistics Subsystem -->
+    <script src="js/mars/statistics/descriptive.js"></script>
+    <script src="js/mars/statistics/probability.js"></script>
+    <script src="js/mars/statistics/distributions.js"></script>
+    <script src="js/mars/statistics/inference.js"></script>
+    <script src="js/mars/statistics/regression.js"></script>
+    <script src="js/mars/statistics/table-parser.js"></script>
+    <script src="js/mars/statistics/stats-engine.js"></script>
+
+    <!-- 6. MARS 5-Layer Validation -->
+    <script src="js/mars/validation/layer1-syntax.js"></script>
+    <script src="js/mars/validation/layer2-math.js"></script>
+    <script src="js/mars/validation/layer3-dimensional.js"></script>
+    <script src="js/mars/validation/layer4-domain.js"></script>
+    <script src="js/mars/validation/layer5-verification.js"></script>
+    <script src="js/mars/validation/validator.js"></script>
+
+    <!-- 7. MARS Unified Orchestrator -->
+    <script src="js/mars/mars.js"></script>
+
+    <!-- 8. Board Engine -->
+    <script src="js/board/chalk-brush.js"></script>
+    <script src="js/board/shapes.js"></script>
+    <script src="js/board/text-renderer.js"></script>
+    <script src="js/board/plotter.js"></script>
+    <script src="js/board/canvas-engine.js"></script>
+
+    <!-- 9. UI Components -->
+    <script src="js/ui/toast.js"></script>
+    <script src="js/ui/toolbar.js"></script>
+    <script src="js/ui/floating-box.js"></script>
+    <script src="js/ui/cv-inspector.js"></script>
+    <script src="js/ui/math-lab-ui.js"></script>
+    <script src="js/ui/stats-lab-ui.js"></script>
+
+    <!-- 10. Bootstrap -->
+    <script src="js/app.js"></script>
+</body>
+</html>
